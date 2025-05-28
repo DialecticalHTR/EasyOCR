@@ -59,9 +59,13 @@ class vgg16_bn(torch.nn.Module):
 
         init_weights(self.slice5.modules())        # no pretrained model for fc6 and fc7
 
+        # first and second conv
         if freeze:
-            for param in self.slice1.parameters():      # only first conv
-                param.requires_grad= False
+            for param in self.slice1.parameters():
+                param.requires_grad = False
+            
+            for param in self.slice2.parameters():
+                param.requires_grad = False
 
     def forward(self, X):
         h = self.slice1(X)
