@@ -221,8 +221,39 @@ class DetectionIoUEvaluator(object):
         return methodMetrics
 
 
+# mAP50 and mAP50-95
+class DetectionIoUEvaluatorWithMAP(DetectionIoUEvaluator):
+    def evaluate_image_with_iou_threshold(self, gt, pred, iou_thresh):
+        original_iou = self.iou_constraint
+        self.iou_constraint = iou_thresh
+        metrics = self.evaluate_image(gt, pred)
+        self.iou_constraint = original_iou
+        return metrics
+
+    def evaluate_map(self, gt_list, pred_list):
+        assert len(gt_list) == len(pred_list), "GT and Pred lists must have the same length"
+
+        iou_thresholds = np.arange(0.5, 0.96, 0.05)
+        ap_list = []
+
+        for iou in iou_thresholds:
+            results = []
+            for gt, pred in zip(gt_list, pred_list):
+                metrics = self.evaluate_image_with_iou_threshold(gt, pred, iou)
+                results.append(metrics)
+
+            combined = self.combine_results(results)
+            ap = combined['precision']
+            ap_list.append(ap)
+
+        return {
+            'mAP50': ap_list[0],             # IoU=0.5
+            'mAP50-95': np.mean(ap_list)     # Среднее по 0.5:0.95
+        }
+
+
 if __name__ == '__main__':
-    evaluator = DetectionIoUEvaluator()
+    evaluator = DetectionIoUEvaluatorWithMAP()
     gts = [[{
         'points': [(0, 0), (1, 0), (1, 1), (0, 1)],
         'text': 1234,
@@ -241,4 +272,8 @@ if __name__ == '__main__':
     for gt, pred in zip(gts, preds):
         results.append(evaluator.evaluate_image(gt, pred))
     metrics = evaluator.combine_results(results)
+
+    # mAP50 and mAP50-95
+    map_metrics = evaluator.evaluate_map(gts, preds)
+    metrics.update(map_metrics)
     print(metrics)

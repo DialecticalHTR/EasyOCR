@@ -12,7 +12,7 @@ import wandb
 
 from config.load_config import load_yaml, DotDict
 from model.craft import CRAFT
-from metrics.eval_det_iou import DetectionIoUEvaluator
+from metrics.eval_det_iou import DetectionIoUEvaluatorWithMAP
 from utils.inference_boxes import (
     test_net,
     load_icdar2015_gt,
@@ -328,11 +328,16 @@ def main_eval(model_path, backbone, config, evaluator, result_dir, buffer, model
         results.append(perSampleMetrics_dict)
 
     metrics = evaluator.combine_results(results)
+
+    # mAP50 and mAP50-95
+    map_metrics = evaluator.evaluate_map(total_imgs_bboxes_gt, total_imgs_bboxes_pre)
+    metrics.update(map_metrics)
+
     print(metrics)
     return metrics
 
 def cal_eval(config, data, res_dir_name, opt, mode):
-    evaluator = DetectionIoUEvaluator()
+    evaluator = DetectionIoUEvaluatorWithMAP()
     test_config = DotDict(config.test[data])
     res_dir = os.path.join(os.path.join("exp", args.yaml), "{}".format(res_dir_name))
 

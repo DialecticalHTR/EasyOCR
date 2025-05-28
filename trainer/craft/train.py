@@ -17,7 +17,7 @@ from data.dataset import SynthTextDataSet, CustomDataset
 from loss.mseloss import Maploss_v2, Maploss_v3
 from model.craft import CRAFT
 from eval import main_eval
-from metrics.eval_det_iou import DetectionIoUEvaluator
+from metrics.eval_det_iou import DetectionIoUEvaluatorWithMAP
 from utils.util import copyStateDict, save_parser
 
 
@@ -112,7 +112,7 @@ class Trainer(object):
             self.config.results_dir, "{}/{}".format(dataset + "_iou", str(train_step))
         )
 
-        evaluator = DetectionIoUEvaluator()
+        evaluator = DetectionIoUEvaluatorWithMAP()
 
         metrics = main_eval(
             None,
@@ -128,10 +128,10 @@ class Trainer(object):
             wandb.log(
                 {
                     "{} iou Recall".format(dataset): np.round(metrics["recall"], 3),
-                    "{} iou Precision".format(dataset): np.round(
-                        metrics["precision"], 3
-                    ),
+                    "{} iou Precision".format(dataset): np.round(metrics["precision"], 3),
                     "{} iou F1-score".format(dataset): np.round(metrics["hmean"], 3),
+                    "{} iou mAP50".format(dataset): np.round(metrics["mAP50"], 3),
+                    "{} iou mAP50-95".format(dataset): np.round(metrics["mAP50-95"], 3),
                 }
             )
 
