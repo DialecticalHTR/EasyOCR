@@ -92,7 +92,7 @@ class PseudoCharBoxBuilder:
             )
             word_img_torch = word_img_torch.permute(2, 0, 1).unsqueeze(0)
             word_img_torch = word_img_torch.type(torch.FloatTensor).cuda(gpu)
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 word_img_scores, _ = net(word_img_torch)
         return word_img_scores
 

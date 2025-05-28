@@ -151,7 +151,7 @@ class Trainer(object):
             if self.config.train.ckpt_path is not None:
                 supervision_param = self.get_load_param(supervision_device)
                 supervision_model.load_state_dict(
-                    copyStateDict(supervision_param["craft"])
+                    copyStateDict(supervision_param)
                 )
                 supervision_model = supervision_model.to(f"cuda:{supervision_device}")
             print(f"Supervision model loading on : gpu {supervision_device}")
@@ -165,7 +165,7 @@ class Trainer(object):
             raise Exception("Undefined architecture")
 
         if self.config.train.ckpt_path is not None:
-            craft.load_state_dict(copyStateDict(self.net_param["craft"]))
+            craft.load_state_dict(copyStateDict(self.net_param))
 
         craft = craft.cuda()
         craft = torch.nn.DataParallel(craft)
@@ -211,7 +211,7 @@ class Trainer(object):
         # LOSS --------------------------------------------------------------------------------------------------------#
         # mixed precision
         if self.config.train.amp:
-            scaler = torch.cuda.amp.GradScaler()
+            scaler = torch.amp.GradScaler("cuda")
 
             if (
                     self.config.train.ckpt_path is not None
@@ -285,7 +285,7 @@ class Trainer(object):
                     confidence_mask_label = confidence_masks
 
                 if self.config.train.amp:
-                    with torch.cuda.amp.autocast():
+                    with torch.amp.autocast("cuda"):
 
                         output, _ = craft(images)
                         out1 = output[:, :, :, 0]
@@ -461,7 +461,7 @@ def main():
 
     # Apply config to wandb
     if config["wandb_opt"]:
-        wandb.init(project="craft-stage2", entity="user_name", name=exp_name)
+        wandb.init(project="craft", entity=config["wandb_opt_entity"], name=exp_name)
         wandb.config.update(config)
 
     config = DotDict(config)
